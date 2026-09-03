@@ -3,100 +3,346 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flask Weather App</title>
+  <title>Weather</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body {
-      background: #f0f4f8;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 1rem;
+    :root {
+      --bg: #0e0e10;
+      --card-bg: #16161a;
+      --border: #232329;
+      --text: #f4f4f5;
+      --text-muted: #82828e;
+      --text-subtle: #4e4e58;
+      --input-bg: #121215;
+      --accent: #e4e4e7;
+      --accent-hover: #ffffff;
+      --error-bg: #1c1416;
+      --error-border: #3d1d24;
+      --error-text: #f87171;
     }
-    .card {
-      background: #ffffff;
-      padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f9f9fb;
+        --card-bg: #ffffff;
+        --border: #e6e6eb;
+        --text: #111113;
+        --text-muted: #6e6e7a;
+        --text-subtle: #a1a1aa;
+        --input-bg: #f4f4f6;
+        --accent: #18181b;
+        --accent-hover: #000000;
+        --error-bg: #fef2f2;
+        --error-border: #fecaca;
+        --error-text: #dc2626;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
       width: 100%;
-      max-width: 420px;
+      max-width: 380px;
+    }
+
+    .search-form {
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.85rem 2.75rem 0.85rem 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-input::placeholder {
+      color: var(--text-subtle);
+    }
+
+    .search-input:focus {
+      border-color: var(--text-muted);
+    }
+
+    .search-btn {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: color 0.15s ease;
+    }
+
+    .search-btn:hover {
+      color: var(--text);
+    }
+
+    .error-msg {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error-text);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .weather-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem 1.5rem;
       text-align: center;
     }
-    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #1e293b; }
-    form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-    input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: none;
+
+    .header-info {
+      margin-bottom: 1.75rem;
     }
-    input:focus { border-color: #3b82f6; }
-    button {
-      padding: 0.75rem 1.25rem;
-      background: #2563eb;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
+
+    .city-name {
+      font-size: 1.15rem;
       font-weight: 600;
-      cursor: pointer;
+      letter-spacing: -0.01em;
+      color: var(--text);
     }
-    button:hover { background: #1d4ed8; }
-    .error {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 0.75rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
+
+    .country-code {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-left: 0.25rem;
     }
-    .weather-result { margin-top: 1rem; }
-    .location { font-size: 1.25rem; font-weight: 600; color: #334155; }
-    .temp { font-size: 3.5rem; font-weight: 800; color: #0f172a; margin: 0.5rem 0; }
-    .condition { text-transform: capitalize; color: #64748b; font-size: 1.1rem; }
-    .details {
+
+    .hero-weather {
       display: flex;
-      justify-content: space-around;
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid #e2e8f0;
-      color: #475569;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .weather-icon-wrap {
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.25rem;
+    }
+
+    .weather-icon-wrap svg {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.5;
+    }
+
+    .temp-display {
+      font-size: 3.75rem;
+      font-weight: 300;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .temp-unit {
+      font-size: 1.75rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      vertical-align: top;
+      margin-left: 2px;
+    }
+
+    .condition-text {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      text-transform: capitalize;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      gap: 0.5rem;
+    }
+
+    .metric-item {
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-value {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .empty-state {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
       font-size: 0.9rem;
     }
-    .details div span { display: block; font-weight: 700; color: #0f172a; margin-top: 0.25rem; }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h1>Current Weather</h1>
-    
-    <form method="POST">
-      <input type="text" name="city" placeholder="Enter city name..." required autofocus>
-      <button type="submit">Search</button>
+  <div class="container">
+    <form class="search-form" method="POST">
+      <input
+        type="text"
+        name="city"
+        class="search-input"
+        placeholder="Search city..."
+        value="{{ request.form.get('city', '') if request.method == 'POST' and not error else '' }}"
+        required
+        autofocus
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <button type="submit" class="search-btn" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
     </form>
 
     {% if error %}
-      <div class="error">{{ error }}</div>
+      <div class="error-msg">{{ error }}</div>
     {% endif %}
 
     {% if weather %}
-      <div class="weather-result">
-        <div class="location">{{ weather.city }}, {{ weather.country }}</div>
-        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="Weather icon">
-        <div class="temp">{{ weather.temp }}°C</div>
-        <div class="condition">{{ weather.description }}</div>
+      <div class="weather-card">
+        <div class="header-info">
+          <span class="city-name">{{ weather.city }}</span>
+          <span class="country-code">{{ weather.country }}</span>
+        </div>
 
-        <div class="details">
-          <div>Feels Like<span>{{ weather.feels_like }}°C</span></div>
-          <div>Humidity<span>{{ weather.humidity }}%</span></div>
-          <div>Wind<span>{{ weather.wind_speed }} m/s</span></div>
+        <div class="hero-weather">
+          <div class="weather-icon-wrap">
+            {% if '01' in weather.icon %}
+              {% if 'd' in weather.icon %}
+                <!-- Sun -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="5"></circle>
+                  <line x1="12" y1="1" x2="12" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="23"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="1" y1="12" x2="3" y2="12"></line>
+                  <line x1="21" y1="12" x2="23" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+              {% else %}
+                <!-- Moon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+              {% endif %}
+            {% elif '02' in weather.icon or '03' in weather.icon or '04' in weather.icon %}
+              <!-- Clouds -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+              </svg>
+            {% elif '09' in weather.icon or '10' in weather.icon %}
+              <!-- Rain -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 13v6M8 13v6M12 15v6M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path>
+              </svg>
+            {% elif '11' in weather.icon %}
+              <!-- Thunderstorm -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"></path>
+                <polyline points="13 11 9 17 15 17 11 23"></polyline>
+              </svg>
+            {% elif '13' in weather.icon %}
+              <!-- Snow -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"></path>
+                <line x1="8" y1="16" x2="8.01" y2="16"></line>
+                <line x1="8" y1="20" x2="8.01" y2="20"></line>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                <line x1="12" y1="22" x2="12.01" y2="22"></line>
+                <line x1="16" y1="16" x2="16.01" y2="16"></line>
+                <line x1="16" y1="20" x2="16.01" y2="20"></line>
+              </svg>
+            {% elif '50' in weather.icon %}
+              <!-- Atmosphere / Mist -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="8" x2="21" y2="8"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="16" x2="21" y2="16"></line>
+              </svg>
+            {% else %}
+              <!-- Default Cloud -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+              </svg>
+            {% endif %}
+          </div>
+          <div class="temp-display">{{ weather.temp }}<span class="temp-unit">°</span></div>
+          <div class="condition-text">{{ weather.description }}</div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <div class="metric-label">Feels like</div>
+            <div class="metric-value">{{ weather.feels_like }}°</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Humidity</div>
+            <div class="metric-value">{{ weather.humidity }}%</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Wind</div>
+            <div class="metric-value">{{ weather.wind_speed }} m/s</div>
+          </div>
         </div>
       </div>
     {% endif %}
   </div>
 
 </body>
-</html>
+</html>
